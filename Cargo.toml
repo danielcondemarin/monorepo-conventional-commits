@@ -1,0 +1,12 @@
+[package]
+name = "nvim-conventional-commits"
+version = "0.1.0"
+authors = ["danielconde <danielconde9@gmail.com>"]
+edition = "2018"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+tempfile = "3"
+git2 = "0.13.17"
+walkdir = "2"
