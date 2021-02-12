@@ -1,10 +1,23 @@
 use git2::{IndexAddOption, Repository, RepositoryInitOptions};
+use nvim_conventional_commits::ConventionalCommitsHint;
 use path::{Path, PathBuf};
 use std::{env, fs, path};
 use tempfile::TempDir;
 use walkdir::WalkDir;
 
-pub fn create_repo_from_fixture<'a>(
+pub fn sut<'a>(
+    fixture: &'a str,
+    staged_paths: Option<Vec<&str>>,
+    commit_type_shorthand: Option<&'a str>,
+) -> String {
+    let (td, _) = create_repo_from_fixture(fixture, staged_paths);
+    let repo_path_str = td.path().to_str().unwrap();
+    let cch = ConventionalCommitsHint::new(repo_path_str, commit_type_shorthand);
+    let suggested_commit = cch.get_suggested_commit();
+    suggested_commit.to_string()
+}
+
+fn create_repo_from_fixture<'a>(
     fixture_path: &'a str,
     index_paths: Option<Vec<&str>>,
 ) -> (TempDir, Repository) {
