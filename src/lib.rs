@@ -1,5 +1,5 @@
 use git2::{Repository, RepositoryOpenFlags, StatusOptions};
-use std::{ffi::OsString, path::Path};
+use std::{collections::HashMap, ffi::OsString, path::Path};
 
 pub struct ConventionalCommitsHint<'a> {
     pub repo_path: &'a str,
@@ -16,17 +16,9 @@ impl<'a> ConventionalCommitsHint<'a> {
                 return None;
             }
 
-            // println!("");
-            // println!("parent {:#?}", parent);
-            // println!("");
-
             let package_json_path = Path::new(self.repo_path).join(parent).join("package.json");
 
             if package_json_path.exists() {
-                // println!("");
-                // println!("found package json {:#?}", package_json_path);
-                // println!("");
-
                 let package_name = parent.file_name().map(ToOwned::to_owned);
                 return package_name;
             }
@@ -44,15 +36,24 @@ impl<'a> ConventionalCommitsHint<'a> {
         .unwrap();
 
         let mut status_opts = StatusOptions::new();
+        let mut packages_changed = HashMap::new();
 
         for entry in repo.statuses(Some(&mut status_opts)).unwrap().iter() {
             let package_name = self.get_package_name_for_file(entry.path().unwrap());
 
-            if let Some(ref name) = package_name {
-                if let Some(ref name_str) = name.to_str() {
-                    return format!("chore({}): commit message", name_str);
+            if let Some(name) = package_name {
+                if let Some(name_str) = name.to_str() {
+                    packages_changed.entry(name_str.to_owned()).or_insert(true);
                 }
             }
+        }
+
+        if packages_changed.len() > 0 {
+            // TODO: use into_keys once api becomes stable, see https://github.com/rust-lang/rust/issues/75294
+            let mut vec = packages_changed.keys().cloned().collect::<Vec<String>>();
+            vec.sort();
+
+            return format!("chore({}): commit message", vec.join(","));
         }
 
         "chore: commit message".to_string()

@@ -11,6 +11,16 @@ fn sut<'a>(fixture: &'a str, index_paths: Option<Vec<&str>>) -> String {
 }
 
 #[test]
+fn lerna_it_returns_commit_message_with_multiple_scopes() {
+    let commit_msg = sut(
+        "tests/fixtures/lerna-monorepo",
+        Some(vec!["packages/package1/*", "packages/package2/*"]),
+    );
+
+    assert_eq!(commit_msg, "chore(package1,package2): commit message")
+}
+
+#[test]
 fn lerna_it_returns_commit_message_with_one_scope() {
     let commit_msg = sut(
         "tests/fixtures/lerna-monorepo",
