@@ -1,4 +1,4 @@
-use git2::Statuses;
+use git2::{Status, Statuses};
 use globset::{Glob, GlobSet, GlobSetBuilder};
 use serde::Deserialize;
 use std::{collections::HashMap, ffi::OsString, fs::File, path::Path};
@@ -50,6 +50,17 @@ impl Monorepo for LernaMonorepo {
         let mut packages_changed = HashMap::new();
 
         for entry in statuses.iter() {
+            let status = entry.status();
+            // TODO: refactor and test only index files are checked
+            if !status.contains(Status::INDEX_NEW)
+                && !status.contains(Status::INDEX_MODIFIED)
+                && !status.contains(Status::INDEX_DELETED)
+                && !status.contains(Status::INDEX_RENAMED)
+                && !status.contains(Status::INDEX_TYPECHANGE)
+            {
+                continue;
+            }
+
             let package_name = self.get_package_name_for_file(entry.path().unwrap());
 
             if let Some(name) = package_name {

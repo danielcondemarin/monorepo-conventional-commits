@@ -65,6 +65,7 @@ impl<'a> ConventionalCommitsHint<'a> {
         );
 
         let mut status_opts = StatusOptions::new();
+
         let statuses = repo.statuses(Some(&mut status_opts)).unwrap();
 
         let commit_type = self
