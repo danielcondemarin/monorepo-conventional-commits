@@ -31,7 +31,7 @@ impl EventHandler {
 
             self.nvim
                 .command(&format!(
-                    "echo \"{}\"",
+                    "normal i {}",
                     conventional_commits.get_suggested_commit(),
                 ))
                 .unwrap()
