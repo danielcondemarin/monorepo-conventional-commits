@@ -6,37 +6,33 @@ use nvim_conventional_commits::ConventionalCommitsHint;
 
 mod logging;
 
-struct EventHandler<'a> {
+struct EventHandler {
     nvim: Neovim,
-    conventional_commits: ConventionalCommitsHint<'a>,
 }
 
-impl<'a> EventHandler<'a> {
-    fn new() -> EventHandler<'a> {
+impl EventHandler {
+    fn new() -> EventHandler {
         Logger::new().init().expect("failed to initialize logger");
 
-        let session = Session::new_parent().unwrap();
-        let nvim = Neovim::new(session);
-
         EventHandler {
-            nvim,
-            conventional_commits: ConventionalCommitsHint::new(
-                "/Users/daniel/workspace/voice-common",
-                None,
-            ),
+            nvim: Neovim::new(Session::new_parent().unwrap()),
         }
     }
 
     fn recv(&mut self) {
         let rx = self.nvim.session.start_event_loop_channel();
 
-        for (event, values) in rx {
-            log::info!("event {:#?}. values {:#?}", event, values);
+        for (_, values) in rx {
+            let repo_path = values[0]
+                .as_str()
+                .expect("expected first argument in message to be repo url");
+
+            let conventional_commits = ConventionalCommitsHint::new(repo_path, None);
 
             self.nvim
                 .command(&format!(
                     "echo \"{}\"",
-                    self.conventional_commits.get_suggested_commit(),
+                    conventional_commits.get_suggested_commit(),
                 ))
                 .unwrap()
         }

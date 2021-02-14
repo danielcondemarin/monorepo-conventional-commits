@@ -23,7 +23,7 @@ function! s:connect()
 endfunction
 
 function! s:suggestCommit()
-  call rpcnotify(s:conventionalCommitsJobId, 'suggestCommit', '123')
+  call rpcnotify(s:conventionalCommitsJobId, 'suggestCommit', getcwd())
 endfunction
 
 " Initialize RPC

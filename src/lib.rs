@@ -53,7 +53,7 @@ impl<'a> ConventionalCommitsHint<'a> {
     pub fn get_suggested_commit(&self) -> String {
         let repo = Repository::open_ext(
             self.repo_path,
-            RepositoryOpenFlags::NO_SEARCH,
+            RepositoryOpenFlags::CROSS_FS,
             Vec::<String>::new(),
         )
         .expect(
