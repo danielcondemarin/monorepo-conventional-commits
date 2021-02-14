@@ -1,10 +1,10 @@
 extern crate neovim_lib;
 
-use logging::Logger;
+use logger::Logger;
 use neovim_lib::{Neovim, NeovimApi, Session};
 use nvim_conventional_commits::ConventionalCommitsHint;
 
-mod logging;
+mod logger;
 
 struct EventHandler {
     nvim: Neovim,
