@@ -34,7 +34,7 @@ impl EventHandler {
             let conventional_commits = ConventionalCommitsHint::new(Path::new(repo_path), None);
 
             if let Err(error) = self.nvim.command(&format!(
-                "normal i {}",
+                "execute \"normal! i{}\\<ESC>^viw\"",
                 conventional_commits.get_suggested_commit(),
             )) {
                 log::error!("running command resulted in error {}", error);
