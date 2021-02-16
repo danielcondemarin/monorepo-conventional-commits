@@ -1,62 +1,82 @@
 use git2::{IndexAddOption, Repository, RepositoryInitOptions};
-use nvim_conventional_commits::ConventionalCommitsHint;
 use path::{Path, PathBuf};
 use std::{env, fs, path};
 use tempfile::TempDir;
 use walkdir::WalkDir;
 
-pub fn sut<'a>(
-    fixture: &'a str,
-    staged_paths: Option<Vec<&str>>,
-    commit_type_shorthand: Option<&'a str>,
-) -> String {
-    let (td, _) = create_repo_from_fixture(fixture, staged_paths);
-    let repo_path_str = td.path().to_str().unwrap();
-    let cch = ConventionalCommitsHint::new(repo_path_str, commit_type_shorthand);
-    let suggested_commit = cch.get_suggested_commit();
-    suggested_commit.to_string()
+pub struct TestOptions<'a> {
+    fixture: PathBuf,
+    staged_paths: Vec<&'a str>,
+    pub git_repo: PathBuf,
+    pub shorthand: Option<&'a str>,
 }
 
-fn create_repo_from_fixture<'a>(
-    fixture_path: &'a str,
-    index_paths: Option<Vec<&str>>,
-) -> (TempDir, Repository) {
-    let td = TempDir::new().unwrap();
-
-    let repo = init_git_repo(td.path());
-
-    copy_fixture_files_to_temp_dir(Path::new(fixture_path), td.path());
-    add_working_dir_to_index(&repo, index_paths);
-
-    (td, repo)
+pub struct TestOptionsBuilder<'a> {
+    test_options: TestOptions<'a>,
 }
 
-fn add_working_dir_to_index(repo: &Repository, index_paths: Option<Vec<&str>>) {
+impl<'a> TestOptionsBuilder<'a> {
+    pub fn new(fixture: &'a str) -> Self {
+        let td = TempDir::new().unwrap();
+
+        TestOptionsBuilder {
+            test_options: TestOptions {
+                fixture: Path::new(fixture).to_owned(),
+                staged_paths: vec!["*"],
+                shorthand: Some("c"),
+                git_repo: td.path().to_owned(),
+            },
+        }
+    }
+
+    pub fn with_staged_paths(mut self, staged_paths: Vec<&'a str>) -> Self {
+        self.test_options.staged_paths = staged_paths;
+        self
+    }
+
+    pub fn with_shorthand(mut self, shorthand: &'a str) -> Self {
+        self.test_options.shorthand = Some(shorthand);
+        self
+    }
+
+    pub fn build(self) -> TestOptions<'a> {
+        create_repo_from_fixture(
+            &self.test_options.fixture,
+            &self.test_options.git_repo,
+            &self.test_options.staged_paths,
+        );
+
+        self.test_options
+    }
+}
+
+fn create_repo_from_fixture<'a>(fixture: &Path, dst: &Path, staged_paths: &Vec<&str>) {
+    let repo = init_git_repo(dst);
+    copy_fixture_to_tmp_repo(fixture, dst);
+    add_working_dir_to_index(&repo, staged_paths);
+}
+
+fn add_working_dir_to_index(repo: &Repository, staged_paths: &Vec<&str>) {
     let mut index = repo.index().unwrap();
     let err = "failed to add fixture files to git index";
 
-    let all_files = vec!["*"];
-
     index
-        .add_all(
-            index_paths.unwrap_or(all_files).iter(),
-            IndexAddOption::DEFAULT,
-            None,
-        )
+        .add_all(staged_paths, IndexAddOption::DEFAULT, None)
         .expect(err);
     index.write().expect(err);
 }
 
-fn init_git_repo(temp_dir_path: &Path) -> Repository {
+fn init_git_repo(temp_dir: &Path) -> Repository {
     let mut opts = RepositoryInitOptions::new();
     opts.initial_head("main");
-    Repository::init_opts(temp_dir_path, &opts).expect("failed to initialise git repo")
+
+    Repository::init_opts(temp_dir, &opts).expect("failed to initialise git repo")
 }
 
-fn copy_fixture_files_to_temp_dir<'a>(fixture_path: &Path, temp_dir_path: &Path) {
+fn copy_fixture_to_tmp_repo<'a>(fixture: &Path, repo: &Path) {
     let cargo_manifest = env::var_os("CARGO_MANIFEST_DIR").unwrap();
     let cargo_manifest_path = Path::new(cargo_manifest.to_str().unwrap());
-    let abs_fixture_path = cargo_manifest_path.join(fixture_path);
+    let abs_fixture_path = cargo_manifest_path.join(fixture);
 
     for entry in WalkDir::new(&abs_fixture_path) {
         let entry = entry.unwrap();
@@ -69,12 +89,14 @@ fn copy_fixture_files_to_temp_dir<'a>(fixture_path: &Path, temp_dir_path: &Path)
         let src_relative_to_fixture = entry_path
             .strip_prefix::<&PathBuf>(&abs_fixture_path)
             .unwrap();
-        let dst: PathBuf = [temp_dir_path, src_relative_to_fixture].iter().collect();
+
+        let dst: PathBuf = [repo, src_relative_to_fixture].iter().collect();
 
         if entry_path.is_file() {
             fs::copy(entry_path, dst).unwrap();
         } else if entry_path.is_dir() {
-            fs::create_dir(&dst).unwrap();
+            // println!("dst {:#?}", dst);
+            fs::create_dir(dst).unwrap();
         }
     }
 }

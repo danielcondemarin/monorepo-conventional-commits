@@ -1,5 +1,7 @@
 extern crate neovim_lib;
 
+use std::path::Path;
+
 use logger::Logger;
 use neovim_lib::{Neovim, NeovimApi, Session};
 use nvim_conventional_commits::ConventionalCommitsHint;
@@ -27,14 +29,16 @@ impl EventHandler {
                 .as_str()
                 .expect("expected first argument in message to be repo url");
 
-            let conventional_commits = ConventionalCommitsHint::new(repo_path, None);
+            log::info!("received values {:#?}\n", values);
 
-            self.nvim
-                .command(&format!(
-                    "normal i {}",
-                    conventional_commits.get_suggested_commit(),
-                ))
-                .unwrap()
+            let conventional_commits = ConventionalCommitsHint::new(Path::new(repo_path), None);
+
+            if let Err(error) = self.nvim.command(&format!(
+                "normal i {}",
+                conventional_commits.get_suggested_commit(),
+            )) {
+                log::error!("running command resulted in error {}", error);
+            }
         }
     }
 }

@@ -12,34 +12,25 @@ pub struct LernaMonorepoConfig {
 }
 
 pub struct LernaMonorepo {
-    repo_path: PathBuf,
+    repo_root: PathBuf,
     packages_globset: GlobSet,
 }
 
 impl Monorepo for LernaMonorepo {
-    fn new(repo_path: PathBuf) -> Option<Box<dyn Monorepo>> {
-        let lerna_config_path = repo_path.join("lerna.json");
+    fn new(repo_root: PathBuf) -> Option<Box<dyn Monorepo>> {
+        let mut globset = GlobSetBuilder::new();
 
-        if let Ok(mut lerna_config_file) = File::open(lerna_config_path) {
-            let mut contents = String::new();
+        if let Some(config) = LernaMonorepo::parse_lerna_config(&repo_root) {
+            for pattern in config.packages.iter() {
+                globset.add(Glob::new(pattern).expect("invalid glob found in lerna.json packages"));
+            }
 
-            if let Ok(_) = lerna_config_file.read_to_string(&mut contents) {
-                if let Ok(config) = serde_json::from_str::<LernaMonorepoConfig>(contents.as_str()) {
-                    let mut globset = GlobSetBuilder::new();
-                    for pattern in config.packages.iter() {
-                        globset.add(
-                            Glob::new(pattern).expect("invalid glob found in lerna.json packages"),
-                        );
-                    }
-
-                    if let Ok(set) = globset.build() {
-                        let monorepo = LernaMonorepo {
-                            repo_path,
-                            packages_globset: set,
-                        };
-                        return Some(Box::new(monorepo));
-                    }
-                }
+            if let Ok(set) = globset.build() {
+                let monorepo = LernaMonorepo {
+                    repo_root,
+                    packages_globset: set,
+                };
+                return Some(Box::new(monorepo));
             }
         }
 
@@ -49,8 +40,13 @@ impl Monorepo for LernaMonorepo {
     fn get_commit_scopes(&self, statuses: Statuses) -> Vec<String> {
         let mut packages_changed = HashMap::new();
 
-        for entry in statuses.iter() {
+        let iter = statuses.iter();
+
+        log::info!("number of entries found in statuses {}\n", iter.len());
+
+        for entry in iter {
             let status = entry.status();
+
             // TODO: refactor and test only index files are checked
             if !status.contains(Status::INDEX_NEW)
                 && !status.contains(Status::INDEX_MODIFIED)
@@ -58,13 +54,21 @@ impl Monorepo for LernaMonorepo {
                 && !status.contains(Status::INDEX_RENAMED)
                 && !status.contains(Status::INDEX_TYPECHANGE)
             {
+                log::info!("skipping entry {:#?}, status {:#?}\n", entry.path(), status);
                 continue;
             }
+
+            log::info!(
+                "found staged entry {:#?}, status {:#?}\n",
+                entry.path(),
+                status
+            );
 
             let package_name = self.get_package_name_for_file(entry.path().unwrap());
 
             if let Some(name) = package_name {
                 if let Some(name_str) = name.to_str() {
+                    log::info!("got package name {}", name_str);
                     packages_changed.entry(name_str.to_owned()).or_insert(true);
                 }
             }
@@ -79,22 +83,38 @@ impl Monorepo for LernaMonorepo {
 }
 
 impl LernaMonorepo {
+    fn parse_lerna_config(repo_path: &PathBuf) -> Option<LernaMonorepoConfig> {
+        let lerna_config_path = repo_path.join("lerna.json");
+
+        if let Ok(mut lerna_config_file) = File::open(lerna_config_path) {
+            let mut contents = String::new();
+
+            if let Ok(_) = lerna_config_file.read_to_string(&mut contents) {
+                if let Ok(config) = serde_json::from_str::<LernaMonorepoConfig>(contents.as_str()) {
+                    return Some(config);
+                }
+            }
+        }
+
+        None
+    }
+
     fn get_package_name_for_file(&self, entry: &str) -> Option<OsString> {
-        let abs_path = self.repo_path.join(entry);
+        let abs_path = self.repo_root.join(entry);
         let mut ancestors = abs_path.ancestors();
 
-        while let Some(parent) = ancestors.next() {
-            if parent.eq(self.repo_path.as_path()) {
+        while let Some(dir) = ancestors.next() {
+            if dir.eq(self.repo_root.as_path()) {
                 return None;
             }
 
-            let package_json_path = Path::new(self.repo_path.as_path())
-                .join(parent)
+            let package_json_path = Path::new(self.repo_root.as_path())
+                .join(dir)
                 .join("package.json");
 
             if package_json_path.exists() {
                 if self.packages_globset.is_match(entry) {
-                    let package_name = parent.file_name().map(ToOwned::to_owned);
+                    let package_name = dir.file_name().map(ToOwned::to_owned);
                     return package_name;
                 }
             }

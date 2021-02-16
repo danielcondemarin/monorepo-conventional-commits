@@ -17,7 +17,7 @@ impl Logger {
         if let Ok(log_file) = env::var(DEBUG_LOG_FILE) {
             let file = OpenOptions::new()
                 .create(true)
-                .write(true)
+                .append(true)
                 .open(log_file)
                 .expect("failed to open logging file");
 
