@@ -1,4 +1,3 @@
-use git2::{Status, Statuses};
 use globset::{Glob, GlobSet, GlobSetBuilder};
 use serde::Deserialize;
 use std::{collections::HashMap, ffi::OsString, fs::File, path::Path};
@@ -37,34 +36,13 @@ impl Monorepo for LernaMonorepo {
         None
     }
 
-    fn get_commit_scopes(&self, statuses: Statuses) -> Vec<String> {
+    fn get_commit_scopes(&self, staged_changes: Vec<String>) -> Vec<String> {
         let mut packages_changed = HashMap::new();
 
-        let iter = statuses.iter();
+        for path in staged_changes {
+            log::info!("found staged entry {:#?}", path,);
 
-        log::info!("number of entries found in statuses {}\n", iter.len());
-
-        for entry in iter {
-            let status = entry.status();
-
-            // TODO: refactor and test only index files are checked
-            if !status.contains(Status::INDEX_NEW)
-                && !status.contains(Status::INDEX_MODIFIED)
-                && !status.contains(Status::INDEX_DELETED)
-                && !status.contains(Status::INDEX_RENAMED)
-                && !status.contains(Status::INDEX_TYPECHANGE)
-            {
-                log::info!("skipping entry {:#?}, status {:#?}\n", entry.path(), status);
-                continue;
-            }
-
-            log::info!(
-                "found staged entry {:#?}, status {:#?}\n",
-                entry.path(),
-                status
-            );
-
-            let package_name = self.get_package_name_for_file(entry.path().unwrap());
+            let package_name = self.get_package_name_for_file(&path);
 
             if let Some(name) = package_name {
                 if let Some(name_str) = name.to_str() {

@@ -1,4 +1,4 @@
-use git2::{Repository, RepositoryOpenFlags, StatusOptions, Statuses};
+use git2::{Repository, RepositoryOpenFlags, Status, StatusOptions};
 use lerna::LernaMonorepo;
 use std::{
     collections::HashMap,
@@ -25,7 +25,7 @@ pub trait Monorepo {
     fn new(repo_path: PathBuf) -> Option<Box<dyn Monorepo>>
     where
         Self: Sized;
-    fn get_commit_scopes(&self, statuses: Statuses) -> Vec<String>;
+    fn get_commit_scopes(&self, statuses: Vec<String>) -> Vec<String>;
 }
 
 pub struct ConventionalCommitsHint<'a> {
@@ -72,8 +72,29 @@ impl<'a> ConventionalCommitsHint<'a> {
 
         log::info!("has monorepo {}\n", &self.monorepo.is_some());
 
+        // TODO: test only index files are considered to return scopes
+        let index_statuses: [Status; 5] = [
+            Status::INDEX_NEW,
+            Status::INDEX_MODIFIED,
+            Status::INDEX_DELETED,
+            Status::INDEX_RENAMED,
+            Status::INDEX_TYPECHANGE,
+        ];
+
+        let staged_changes: Vec<String> = statuses
+            .iter()
+            .filter(|entry| {
+                index_statuses
+                    .iter()
+                    .any(|s| entry.status().contains(s.to_owned()))
+            })
+            .map(|entry| {
+                return entry.path().unwrap().to_owned();
+            })
+            .collect();
+
         if let Some(monorepo) = &self.monorepo {
-            let scopes = monorepo.get_commit_scopes(statuses).join(",");
+            let scopes = monorepo.get_commit_scopes(staged_changes).join(",");
 
             if scopes.len() > 0 {
                 return format!("{}({}): commit message", commit_type, scopes);
