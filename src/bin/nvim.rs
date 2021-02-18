@@ -1,12 +1,8 @@
 extern crate neovim_lib;
 
-use std::path::Path;
-
-use logger::Logger;
 use neovim_lib::{Neovim, NeovimApi, Session};
-use nvim_conventional_commits::ConventionalCommitsHint;
-
-mod logger;
+use nvim_conventional_commits::{logger::Logger, ConventionalCommitsHint};
+use std::path::Path;
 
 struct EventHandler {
     nvim: Neovim,

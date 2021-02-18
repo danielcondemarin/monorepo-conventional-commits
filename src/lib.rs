@@ -7,6 +7,8 @@ use std::{
 
 mod lerna;
 
+pub mod logger;
+
 pub static COMMIT_TYPES: [(&'static str, &'static str); 11] = [
     ("b", "build"),
     ("ci", "ci"),

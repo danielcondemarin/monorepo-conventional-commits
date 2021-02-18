@@ -5,7 +5,7 @@ endif
 
 " The path to the binary that was created out of 'cargo build' or 'cargo build --release". This will generally be 'target/release/name'
 let s:scriptdir = resolve(expand('<sfile>:p:h') . '/..')
-let s:bin = s:scriptdir . '/target/release/nvim-conventional-commits'
+let s:bin = s:scriptdir . '/target/release/nvim'
 
 " Entry point. Initialize RPC. If it succeeds, then attach commands to the `rpcnotify` invocations.
 function! s:connect()
