@@ -8,7 +8,6 @@ pub struct TestOptions<'a> {
     fixture: PathBuf,
     staged_paths: Vec<&'a str>,
     pub git_repo: PathBuf,
-    pub shorthand: Option<&'a str>,
 }
 
 pub struct TestOptionsBuilder<'a> {
@@ -23,7 +22,6 @@ impl<'a> TestOptionsBuilder<'a> {
             test_options: TestOptions {
                 fixture: Path::new(fixture).to_owned(),
                 staged_paths: vec!["*"],
-                shorthand: Some("c"),
                 git_repo: td.path().to_owned(),
             },
         }
@@ -31,11 +29,6 @@ impl<'a> TestOptionsBuilder<'a> {
 
     pub fn with_staged_paths(mut self, staged_paths: Vec<&'a str>) -> Self {
         self.test_options.staged_paths = staged_paths;
-        self
-    }
-
-    pub fn with_shorthand(mut self, shorthand: &'a str) -> Self {
-        self.test_options.shorthand = Some(shorthand);
         self
     }
 

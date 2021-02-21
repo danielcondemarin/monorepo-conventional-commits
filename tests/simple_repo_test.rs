@@ -1,27 +1,14 @@
-use nvim_conventional_commits::{ConventionalCommitsHint, COMMIT_TYPES};
+use nvim_conventional_commits::{CommitScopeFinder, DefaultScopeFinder};
 mod common;
 use common::TestOptionsBuilder;
 
 #[test]
-fn it_returns_default_commit_message() {
+fn it_returns_no_scopes() {
     let options = TestOptionsBuilder::new("tests/fixtures/simple-repo").build();
 
-    let cch = ConventionalCommitsHint::new(&options.git_repo, options.shorthand);
-    let commit_msg = cch.get_suggested_commit();
+    let cch = DefaultScopeFinder::new(&options.git_repo);
+    let scopes = cch.get_commit_scopes();
 
-    assert_eq!(commit_msg, "chore: commit message")
-}
-
-#[test]
-fn it_returns_commit_message_type() {
-    for (shorthand, commit_type) in COMMIT_TYPES.iter() {
-        let options = TestOptionsBuilder::new("tests/fixtures/simple-repo")
-            .with_shorthand(shorthand)
-            .build();
-
-        let cch = ConventionalCommitsHint::new(&options.git_repo, options.shorthand);
-        let commit_msg = cch.get_suggested_commit();
-
-        assert_eq!(commit_msg, format!("{}: commit message", commit_type))
-    }
+    let empty_vec: Vec<String> = Vec::new();
+    assert_eq!(scopes, empty_vec)
 }
