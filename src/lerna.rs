@@ -1,4 +1,4 @@
-use globset::{Glob, GlobSet, GlobSetBuilder};
+use globset::{GlobBuilder, GlobSet, GlobSetBuilder};
 use serde::Deserialize;
 use std::{collections::HashMap, ffi::OsString, fs::File, path::Path};
 use std::{io::Read, path::PathBuf};
@@ -21,7 +21,11 @@ impl Monorepo for LernaMonorepo {
 
         if let Some(config) = LernaMonorepo::parse_lerna_config(&repo_root) {
             for pattern in config.packages.iter() {
-                globset.add(Glob::new(pattern).expect("invalid glob found in lerna.json packages"));
+                let glob = GlobBuilder::new(pattern)
+                    .literal_separator(true)
+                    .build()
+                    .expect("invalid glob found in lerna.json packages");
+                globset.add(glob);
             }
 
             if let Ok(set) = globset.build() {
@@ -91,7 +95,9 @@ impl LernaMonorepo {
                 .join("package.json");
 
             if package_json_path.exists() {
-                if self.packages_globset.is_match(entry) {
+                let dir_relative = dir.strip_prefix(&self.repo_root).unwrap();
+
+                if self.packages_globset.is_match(dir_relative) {
                     let package_name = dir.file_name().map(ToOwned::to_owned);
                     return package_name;
                 }

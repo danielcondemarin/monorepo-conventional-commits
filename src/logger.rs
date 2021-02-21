@@ -10,7 +10,7 @@ pub struct Logger {
     writer: Option<Mutex<Box<File>>>,
 }
 
-static DEBUG_LOG_FILE: &str = "NVIM_DEBUG_LOG";
+static DEBUG_LOG_FILE: &str = "DEBUG_LOG";
 
 impl Logger {
     pub fn new() -> Logger {

@@ -3,7 +3,7 @@
 - Do you use conventional commits in your daily workflow?
 - Do you specify the scope(s) every time for the packages you're working on?
 
-If so this project might save you some time. It provides you with a [git prepare-commit-msg hook](https://git-scm.com/docs/githooks#_prepare_commit_msg) that figures out the repetitive parts of the commit for you.
+If so this project might save you some time. It provides you with a [git prepare-commit-msg hook](https://git-scm.com/docs/githooks#_prepare_commit_msg) that figures out the automatable parts of the commit for you.
 
 ### Installation
 
