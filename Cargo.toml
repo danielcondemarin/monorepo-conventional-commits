@@ -4,12 +4,13 @@ version = "0.1.0"
 authors = ["danielconde <danielconde9@gmail.com>"]
 edition = "2018"
 
-[dependencies]
+[dev-dependencies]
 tempfile = "3"
+
+[dependencies]
 git2 = "0.13.17"
 walkdir = "2"
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
 globset = "0.4.6"
-neovim-lib = "0.6.0"
 log = { version = "0.4", features = ["std"] }
