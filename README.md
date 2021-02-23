@@ -37,7 +37,7 @@ In this case git doesn't invoke the editor, but the precommit hook will add for 
 
 Any of the [conventional commits](https://www.conventionalcommits.org/en/v1.0.0/) types should work.
 
-Other commit sources such as template, merge, squash and commit are ignored.
+Other commit sources such as merge, squash and commit are ignored.
 
 ### Supported monorepos
 
