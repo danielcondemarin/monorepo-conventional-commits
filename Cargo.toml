@@ -6,6 +6,7 @@ edition = "2018"
 
 [dev-dependencies]
 tempfile = "3"
+test_utilities = { path = "test_utilities" }
 
 [dependencies]
 git2 = "0.13.17"

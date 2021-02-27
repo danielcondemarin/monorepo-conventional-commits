@@ -203,6 +203,7 @@ dependencies = [
  "serde",
  "serde_json",
  "tempfile",
+ "test_utilities",
  "walkdir",
 ]
 
@@ -413,6 +414,10 @@ dependencies = [
  "remove_dir_all",
  "winapi",
 ]
+
+[[package]]
+name = "test_utilities"
+version = "0.0.0"
 
 [[package]]
 name = "thread_local"
