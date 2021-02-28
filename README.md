@@ -9,10 +9,11 @@ If so this project might save you some time. It provides you with a [git prepare
 
 Download the prebuilt binary from the [releases page](https://github.com/danielcondemarin/monorepo-conventional-commits/releases)
 
-Then simply add the prepare-commit-msg binary to the repo git hooks. 
+Then simply add the prepare-commit-msg binary to the repo git hooks and give it execute permissions. 
 
 ```
   $ cp ~/Downloads/prepare-commit-msg /your_monorepo/.git/hooks
+  $ chmod +x /your_monorepo/.git/hooks/prepare-commit-msg
 ```
 
 Currently only macos is available from the releases page. For other platforms you could build from source using [rust cargo](https://github.com/rust-lang/cargo).
