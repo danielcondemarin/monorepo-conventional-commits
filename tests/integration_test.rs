@@ -50,6 +50,12 @@ fn basic_tests() {
             staged_paths: vec!["apps/app3"],
             expected_scopes: vec!["app3-x"],
         },
+        TestCase {
+            description: "it removes org / scope prefix from package.json name",
+            fixture: "tests/fixtures/complex-lerna-monorepo",
+            staged_paths: vec!["apps/scoped"],
+            expected_scopes: vec!["app4"],
+        },
     ];
 
     test_each(test_cases, |tc| {

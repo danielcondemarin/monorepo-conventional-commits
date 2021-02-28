@@ -107,7 +107,15 @@ impl LernaMonorepo {
                         let dir_relative = dir.strip_prefix(&self.repo_root).unwrap();
 
                         if self.packages_globset.is_match(dir_relative) {
-                            return Some(package_json.name);
+                            let name = package_json.name;
+
+                            if name.starts_with("@") {
+                                let name_parts: Vec<&str> = name.split("/").collect();
+                                let actual_name = name_parts.get(1).map(|s| s.to_string());
+                                return actual_name;
+                            }
+
+                            return Some(name);
                         }
                     }
                 }
