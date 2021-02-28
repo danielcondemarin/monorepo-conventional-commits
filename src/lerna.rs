@@ -1,6 +1,7 @@
 use globset::{GlobBuilder, GlobSet, GlobSetBuilder};
-use serde::Deserialize;
-use std::{collections::HashMap, ffi::OsString, fs::File, path::Path};
+use serde::{Deserialize, Serialize};
+use serde_json::Result;
+use std::{collections::HashMap, fs::File, path::Path};
 use std::{io::Read, path::PathBuf};
 
 use crate::Monorepo;
@@ -49,10 +50,8 @@ impl Monorepo for LernaMonorepo {
             let package_name = self.get_package_name_for_file(&path);
 
             if let Some(name) = package_name {
-                if let Some(name_str) = name.to_str() {
-                    log::info!("got package name {}", name_str);
-                    packages_changed.entry(name_str.to_owned()).or_insert(true);
-                }
+                log::info!("got package name {}", name);
+                packages_changed.entry(name).or_insert(true);
             }
         }
 
@@ -62,6 +61,11 @@ impl Monorepo for LernaMonorepo {
         sorted_packages.sort();
         sorted_packages
     }
+}
+
+#[derive(Serialize, Deserialize)]
+struct PackageJSON {
+    name: String,
 }
 
 impl LernaMonorepo {
@@ -81,7 +85,7 @@ impl LernaMonorepo {
         None
     }
 
-    fn get_package_name_for_file(&self, entry: &str) -> Option<OsString> {
+    fn get_package_name_for_file(&self, entry: &str) -> Option<String> {
         let abs_path = self.repo_root.join(entry);
         let mut ancestors = abs_path.ancestors();
 
@@ -95,11 +99,17 @@ impl LernaMonorepo {
                 .join("package.json");
 
             if package_json_path.exists() {
-                let dir_relative = dir.strip_prefix(&self.repo_root).unwrap();
+                if let Ok(package_json_file) = File::open(&package_json_path) {
+                    let package_json_result: Result<PackageJSON> =
+                        serde_json::from_reader(package_json_file);
 
-                if self.packages_globset.is_match(dir_relative) {
-                    let package_name = dir.file_name().map(ToOwned::to_owned);
-                    return package_name;
+                    if let Ok(package_json) = package_json_result {
+                        let dir_relative = dir.strip_prefix(&self.repo_root).unwrap();
+
+                        if self.packages_globset.is_match(dir_relative) {
+                            return Some(package_json.name);
+                        }
+                    }
                 }
             }
         }

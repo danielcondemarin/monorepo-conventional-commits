@@ -44,6 +44,12 @@ fn basic_tests() {
             staged_paths: vec!["spikes/spike1/*"],
             expected_scopes: vec![],
         },
+        TestCase {
+            description: "it uses package.json name for the scope (not directory name)",
+            fixture: "tests/fixtures/complex-lerna-monorepo",
+            staged_paths: vec!["apps/app3"],
+            expected_scopes: vec!["app3-x"],
+        },
     ];
 
     test_each(test_cases, |tc| {
