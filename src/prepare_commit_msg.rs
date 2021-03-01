@@ -35,8 +35,8 @@ impl<'a> PrepareCommitMessage<'a> {
             Some("message") => {
                 new_commit_msg = self.handle_message_commit_source(&original_commit_msg, scopes)
             }
+            None | Some("template") => new_commit_msg = self.handle_default(&original_commit_msg, scopes),
             Some(_) => {}
-            None => new_commit_msg = self.handle_default(&original_commit_msg, scopes),
         }
 
         if let Some(msg) = new_commit_msg {
@@ -162,6 +162,15 @@ mod tests {
                 description:
                     "adds generated commit message to the beginning of commit message file",
                 commit_source: None,
+                scopes: vec!["package"],
+                commit_msg_contents: "initial contents of commit message\nwith multiple lines",
+                expected_commit:
+                    "chore(package):\ninitial contents of commit message\nwith multiple lines",
+            },
+            TestCase {
+                description:
+                    "adds generated commit message to the beginning of commit message file when commit source is \"template\"",
+                commit_source: Some("template"),
                 scopes: vec!["package"],
                 commit_msg_contents: "initial contents of commit message\nwith multiple lines",
                 expected_commit:
